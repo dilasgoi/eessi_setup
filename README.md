@@ -74,25 +74,32 @@ sudo stratum1/bin/eessi_stratum1_setup.sh
 ```
 
 This script will:
-1. Install required dependencies (Ansible, CVMFS, Apache, Squid)
+1. Install required dependencies (Ansible, CVMFS, Apache)
 2. Clone the EESSI filesystem-layer repository
 3. Configure the server as a Stratum 1 replica
-4. Set up the web server and Squid proxy
+4. Set up the web server
 5. Verify the installation
 
 ### Advanced Installation Options
 
-The `eessi_stratum1_setup.sh` script accepts several variables to customize the deployment:
+The `eessi_stratum1_setup.sh` script accepts several command-line options and environment variables to customize the deployment:
 
 ```bash
-# Use custom storage location
-CUSTOM_STORAGE_DIR="/data/cvmfs" sudo stratum1/bin/eessi_stratum1_setup.sh
+# Command-line options
+sudo stratum1/bin/eessi_stratum1_setup.sh -i IP_ADDRESS -s STORAGE_DIR -r REPOSITORY -u SSH_USER -l LOG_LEVEL -y
 
-# Enable GeoAPI for geographic-based client redirection
-USE_GEOAPI="yes" sudo stratum1/bin/eessi_stratum1_setup.sh
+# Options:
+#   -i IP_ADDRESS         IP address of Stratum 1 server
+#   -u SSH_USER           SSH username for Ansible connection (default: current user)
+#   -s STORAGE_DIR        Custom storage location for CVMFS (default: /lscratch/cvmfs)
+#   -r REPOSITORY         Repository to replicate (default: software.eessi.io)
+#   -l LOG_LEVEL          Set logging level: INFO, DEBUG, ERROR (default: INFO)
+#   -y                    Assume yes to all prompts (non-interactive mode)
+#   -h                    Show help message
 
-# Specify the repository to replicate
-REPOSITORY="software.eessi.io" sudo stratum1/bin/eessi_stratum1_setup.sh
+# Or environment variables
+EESSI_STRATUM1_IP=10.1.1.8 EESSI_STORAGE_DIR=/data/cvmfs EESSI_SSH_USER=admin \
+EESSI_LOG_LEVEL=DEBUG sudo -E ./stratum1/bin/eessi_stratum1_setup.sh
 ```
 
 ### Stratum 1 Monitoring
@@ -104,22 +111,19 @@ Basic usage:
 sudo stratum1/bin/eessi_stratum1_monitoring.sh
 ```
 
-This will:
-1. Check repository size and content
-2. Monitor catalog information
-3. Analyze web server and client connections
-4. Monitor disk space usage
-5. Check synchronization with Stratum 0
-
 Advanced options:
 ```bash
-# Generate HTML report
+# Options:
+#   -r REPO               Repository name (default: software.eessi.io)
+#   -o FILE               Generate HTML report to specified file
+#   -e EMAIL              Send report to email address
+#   -s SERVER             Stratum 0 server to check against (can be specified multiple times)
+#   -S FILE               File containing a list of Stratum 0 servers (one per line)
+#   -h                    Show help
+
+# Examples
 sudo stratum1/bin/eessi_stratum1_monitoring.sh -o /var/www/html/eessi-report.html
-
-# Generate report and email it
-sudo stratum1/bin/eessi_stratum1_monitoring.sh -o /var/www/html/eessi-report.html -e admin@example.org
-
-# Check against specific Stratum 0 server
+sudo stratum1/bin/eessi_stratum1_monitoring.sh -e admin@example.org -o /var/www/html/eessi-report.html
 sudo stratum1/bin/eessi_stratum1_monitoring.sh -s cvmfs-stratum0.example.org
 ```
 
@@ -230,6 +234,13 @@ This will:
 The script accepts several environment variables to customize the installation:
 
 ```bash
+# Environment variables with defaults:
+# EESSI_STRATUM1_IP   - IP address of local Stratum 1 server (default: 10.1.12.2)
+# EESSI_CACHE_SIZE    - CVMFS cache size in MB (default: 10000)
+# EESSI_LOG_FILE      - Path to log file (default: /var/log/eessi_client_install.log)
+# EESSI_CACHE_BASE    - Custom location for CVMFS cache (default: /var/lib/cvmfs)
+
+# Examples:
 # Use a specific Stratum 1 server
 EESSI_STRATUM1_IP=10.1.12.5 sudo -E client/bin/eessi_client_setup.sh
 
@@ -290,31 +301,6 @@ module avail
 module load Python/3.9.6
 ```
 
-### Client Diagnostics and Troubleshooting
-
-If you encounter issues with the EESSI client, the `eessi_diagnostics.sh` script can help identify and resolve common problems:
-
-```bash
-sudo client/bin/eessi_diagnostics.sh
-```
-
-#### Common Issues
-
-1. **Repository accessibility**
-   - Check if the CVMFS client service is running: `systemctl status autofs`
-   - Verify network connectivity to the configured Stratum 1 servers
-   - Test direct repository access: `cvmfs_config probe software.eessi.io`
-
-2. **Cache issues**
-   - Ensure sufficient disk space for the cache
-   - Check cache permissions: `ls -la $EESSI_CACHE_BASE`
-   - Reset the cache if corrupted: `cvmfs_talk -i software.eessi.io cleanup 0`
-
-3. **Performance issues**
-   - Consider using a local Stratum 1 server for better performance
-   - Adjust cache size based on your usage patterns
-   - Ensure client has adequate RAM and network bandwidth
-
 ### Advanced Client Configuration
 
 #### Custom Domain Configuration
@@ -345,7 +331,7 @@ This example demonstrates a full setup with a local Stratum 1 server and multipl
 # On the Stratum 1 server (e.g., 10.0.0.1)
 git clone https://github.com/yourusername/eessi-setup.git
 cd eessi-setup
-sudo stratum1/bin/eessi_stratum1_setup.sh
+sudo stratum1/bin/eessi_stratum1_setup.sh -i 10.0.0.1 -s /data/cvmfs
 
 # Verify installation
 curl --head http://localhost/cvmfs/software.eessi.io/.cvmfspublished
@@ -390,19 +376,10 @@ module load eessi/2023.06
 module avail  # Should show available EESSI software
 ```
 
-## Contributing
-
-Contributions to the EESSI Setup Project are welcome! Please feel free to submit a Pull Request or open an Issue on GitHub.
-
-## License
-
-This project is licensed under the GNU General Public License v3.0 - see the LICENSE file for details.
-
 ## Acknowledgments
 
 - The EESSI project: https://www.eessi.io/
 - CernVM-FS: https://cernvm.cern.ch/fs/
-- The European HPC community for their ongoing support and contributions
 
 ## Additional Resources
 

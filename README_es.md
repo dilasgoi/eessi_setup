@@ -82,17 +82,24 @@ Este script:
 
 ### Opciones Avanzadas de Instalación
 
-El script `eessi_stratum1_setup.sh` acepta varias variables para personalizar el despliegue:
+El script `eessi_stratum1_setup.sh` acepta varias opciones de línea de comandos y variables de entorno para personalizar el despliegue:
 
 ```bash
-# Usar ubicación de almacenamiento personalizada
-CUSTOM_STORAGE_DIR="/data/cvmfs" sudo stratum1/bin/eessi_stratum1_setup.sh
+# Opciones de línea de comandos
+sudo stratum1/bin/eessi_stratum1_setup.sh -i IP_ADDRESS -s STORAGE_DIR -r REPOSITORY -u SSH_USER -l LOG_LEVEL -y
 
-# Habilitar GeoAPI para la redirección de clientes basada en la geografía
-USE_GEOAPI="yes" sudo stratum1/bin/eessi_stratum1_setup.sh
+# Opciones:
+#   -i IP_ADDRESS         Dirección IP del servidor Stratum 1
+#   -u SSH_USER           Nombre de usuario SSH para la conexión Ansible (por defecto: usuario actual)
+#   -s STORAGE_DIR        Ubicación de almacenamiento personalizada para CVMFS (por defecto: /lscratch/cvmfs)
+#   -r REPOSITORY         Repositorio a replicar (por defecto: software.eessi.io)
+#   -l LOG_LEVEL          Establecer nivel de registro: INFO, DEBUG, ERROR (por defecto: INFO)
+#   -y                    Asumir sí a todas las preguntas (modo no interactivo)
+#   -h                    Mostrar mensaje de ayuda
 
-# Especificar el repositorio a replicar
-REPOSITORY="software.eessi.io" sudo stratum1/bin/eessi_stratum1_setup.sh
+# O variables de entorno
+EESSI_STRATUM1_IP=10.1.1.8 EESSI_STORAGE_DIR=/data/cvmfs EESSI_SSH_USER=admin \
+EESSI_LOG_LEVEL=DEBUG sudo -E ./stratum1/bin/eessi_stratum1_setup.sh
 ```
 
 ### Monitorización de Stratum 1
@@ -104,22 +111,19 @@ Uso básico:
 sudo stratum1/bin/eessi_stratum1_monitoring.sh
 ```
 
-Esto:
-1. Comprobará el tamaño y contenido del repositorio
-2. Monitorizará la información del catálogo
-3. Analizará el servidor web y las conexiones de clientes
-4. Monitorizará el uso del espacio en disco
-5. Comprobará la sincronización con Stratum 0
-
 Opciones avanzadas:
 ```bash
-# Generar informe HTML
+# Opciones:
+#   -r REPO               Nombre del repositorio (por defecto: software.eessi.io)
+#   -o FILE               Generar informe HTML en el archivo especificado
+#   -e EMAIL              Enviar informe a dirección de correo electrónico
+#   -s SERVER             Servidor Stratum 0 para verificar (puede especificarse varias veces)
+#   -S FILE               Archivo con una lista de servidores Stratum 0 (uno por línea)
+#   -h                    Mostrar ayuda
+
+# Ejemplos
 sudo stratum1/bin/eessi_stratum1_monitoring.sh -o /var/www/html/eessi-report.html
-
-# Generar informe y enviarlo por correo electrónico
-sudo stratum1/bin/eessi_stratum1_monitoring.sh -o /var/www/html/eessi-report.html -e admin@example.org
-
-# Comprobar con un servidor Stratum 0 específico
+sudo stratum1/bin/eessi_stratum1_monitoring.sh -e admin@example.org -o /var/www/html/eessi-report.html
 sudo stratum1/bin/eessi_stratum1_monitoring.sh -s cvmfs-stratum0.example.org
 ```
 
@@ -230,6 +234,13 @@ Esto:
 El script acepta varias variables de entorno para personalizar la instalación:
 
 ```bash
+# Variables de entorno con valores predeterminados:
+# EESSI_STRATUM1_IP   - Dirección IP del servidor Stratum 1 local (por defecto: 10.1.12.2)
+# EESSI_CACHE_SIZE    - Tamaño de caché CVMFS en MB (por defecto: 10000)
+# EESSI_LOG_FILE      - Ruta al archivo de registro (por defecto: /var/log/eessi_client_install.log)
+# EESSI_CACHE_BASE    - Ubicación personalizada para la caché CVMFS (por defecto: /var/lib/cvmfs)
+
+# Ejemplos:
 # Usar un servidor Stratum 1 específico
 EESSI_STRATUM1_IP=10.1.12.5 sudo -E client/bin/eessi_client_setup.sh
 
@@ -239,7 +250,7 @@ EESSI_CACHE_SIZE=20000 sudo -E client/bin/eessi_client_setup.sh
 # Usar una ubicación de caché personalizada
 EESSI_CACHE_BASE=/data/cvmfs-cache sudo -E client/bin/eessi_client_setup.sh
 
-# Especificar un archivo de log personalizado
+# Especificar un archivo de registro personalizado
 EESSI_LOG_FILE=/var/log/eessi-client.log sudo -E client/bin/eessi_client_setup.sh
 
 # Combinar múltiples opciones
@@ -290,31 +301,6 @@ module avail
 module load Python/3.9.6
 ```
 
-### Diagnóstico y Solución de Problemas del Cliente
-
-Si encuentra problemas con el cliente EESSI, el script `eessi_diagnostics.sh` puede ayudar a identificar y resolver problemas comunes:
-
-```bash
-sudo client/bin/eessi_diagnostics.sh
-```
-
-#### Problemas Comunes
-
-1. **Accesibilidad del repositorio**
-   - Comprobar si el servicio cliente CVMFS está en ejecución: `systemctl status autofs`
-   - Verificar la conectividad de red a los servidores Stratum 1 configurados
-   - Probar el acceso directo al repositorio: `cvmfs_config probe software.eessi.io`
-
-2. **Problemas de caché**
-   - Asegurar suficiente espacio en disco para la caché
-   - Comprobar los permisos de la caché: `ls -la $EESSI_CACHE_BASE`
-   - Restablecer la caché si está corrupta: `cvmfs_talk -i software.eessi.io cleanup 0`
-
-3. **Problemas de rendimiento**
-   - Considerar el uso de un servidor Stratum 1 local para mejor rendimiento
-   - Ajustar el tamaño de caché según sus patrones de uso
-   - Asegurar que el cliente tiene RAM y ancho de banda de red adecuados
-
 ### Configuración Avanzada del Cliente
 
 #### Configuración de Dominio Personalizada
@@ -345,7 +331,7 @@ Este ejemplo demuestra una configuración completa con un servidor Stratum 1 loc
 # En el servidor Stratum 1 (ej., 10.0.0.1)
 git clone https://github.com/yourusername/eessi-setup.git
 cd eessi-setup
-sudo stratum1/bin/eessi_stratum1_setup.sh
+sudo stratum1/bin/eessi_stratum1_setup.sh -i 10.0.0.1 -s /data/cvmfs
 
 # Verificar instalación
 curl --head http://localhost/cvmfs/software.eessi.io/.cvmfspublished
@@ -389,14 +375,6 @@ python3 --version  # Ejemplo de uso de software proporcionado por EESSI
 module load eessi/2023.06
 module avail  # Debería mostrar el software EESSI disponible
 ```
-
-## Contribuir
-
-¡Las contribuciones al Proyecto EESSI Setup son bienvenidas! Por favor, siéntase libre de enviar un Pull Request o abrir un Issue en GitHub.
-
-## Licencia
-
-Este proyecto está licenciado bajo la GNU General Public License v3.0 - consulte el archivo LICENSE para más detalles.
 
 ## Agradecimientos
 
