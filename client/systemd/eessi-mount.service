@@ -1,0 +1,26 @@
+[Unit]
+#==============================================================================
+# EESSI Repository Mount Service
+#==============================================================================
+# Author:      Diego Lasa
+# Description: Service to ensure EESSI repositories are properly mounted
+#              at system boot time
+#
+# Installation: Copy to /etc/systemd/system/eessi-mount.service
+#               Run: systemctl enable eessi-mount.service
+#
+# Notes:       This service runs after network is available and before
+#              user sessions are started
+#==============================================================================
+Description=Mount EESSI CVMFS repositories
+After=network-online.target autofs.service
+Wants=network-online.target
+Documentation=https://www.eessi.io/docs/
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/cvmfs_config probe software.eessi.com
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
