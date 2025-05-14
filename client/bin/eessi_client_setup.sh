@@ -381,7 +381,7 @@ print_summary() {
     echo "  5. Check cache status: cvmfs_talk -i software.eessi.io cache info"
     echo ""
     echo "To use EESSI software, run:"
-    echo "  source /cvmfs/software.eessi.io/<version>/init/bash"
+    echo "  source /cvmfs/software.eessi.io/versions/<version>/init/bash"
     echo "where <version> is your desired EESSI version"
     echo "======================================================"
 }
