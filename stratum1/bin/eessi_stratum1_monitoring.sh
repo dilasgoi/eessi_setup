@@ -19,7 +19,6 @@
 #              ./eessi_stratum1_monitor.sh -s cvmfs-stratum0.example.org
 #==============================================================================
 #
-eessi-report.html
 #              ./eessi_stratum1_monitor.sh -s cvmfs-stratum0.example.org
 #==============================================================================
 
